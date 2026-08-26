@@ -1,15 +1,17 @@
 # MCP Gorev Asistani
 
-Kullanici mesajlarini Groq'taki bir LLM'e gonderen, LLM'in dort MCP
-aracini (list_tasks, create_task, update_task, delete_task) kullanarak
-bellek ici (in-memory) bir gorev listesini yonetmesini saglayan, tek bir
-Docker Compose servisi olarak calisan ogretici bir proje.
+Kullanici mesajlarini Groq'taki bir LLM'e gonderen, LLM'in bes MCP
+aracini (list_tasks, list_tasks_by_priority, create_task, update_task,
+delete_task) kullanarak bellek ici (in-memory) bir gorev listesini
+yonetmesini saglayan, tek bir Docker Compose servisi olarak calisan
+ogretici bir proje. Her gorevin bir `priority` (aciliyet: dusuk/orta/
+yuksek) alani vardir.
 
 ## Ne yapiyor?
 
 `POST /chat` ucuna dogal dilde bir mesaj gonderiyorsun (orn. "Docker
 gorevini tamamlandi isaretle"). Chat sunucusu bu mesaji Groq'a, elindeki
-4 MCP aracinin semasiyla birlikte gonderiyor. Model gerekirse (id bulmak
+5 MCP aracinin semasiyla birlikte gonderiyor. Model gerekirse (id bulmak
 icin once list_tasks gibi) art arda arac cagirabiliyor; her cagri JSON
 Schema'ya karsi dogrulaniyor, gercek MCP sunucusu uzerinden calistirilip
 sonucu tekrar modele gosteriliyor. Sonunda dogal dil cevabi ve tum surecin
@@ -30,7 +32,7 @@ Express (/chat)                       (child process, stdio ile baslatiliyor)
 | Dosya | Sorumluluk |
 |---|---|
 | `src/task-store` | Gorev CRUD'u, `Map` tabanli bellek ici depo, seed veri |
-| `src/mcp-server` | task-store'u JSON Schema'li 4 MCP aracina cevirir, stdio+JSON-RPC dinler |
+| `src/mcp-server` | task-store'u JSON Schema'li 5 MCP aracina cevirir, stdio+JSON-RPC dinler |
 | `src/mcp-client` | mcp-server'i child process baslatir, tek (singleton) baglanti tutar |
 | `src/groq` | Groq'a istek atar, MCP sema -> Groq tool formati donusumu |
 | `src/app` | `/chat` endpoint'i, arac cagirma dongusu, `ajv` dogrulama, trace uretimi |
@@ -117,6 +119,15 @@ hangisini kastettigini sordu** - hicbir arac cagirmadan. Bu, projenin
 beklenen/istenen bir davranisi (yanlis gorevi silmemek), hata degil.
 
 ## Sik sorulan sorular
+
+**Yeni bir arac (orn. `list_tasks_by_priority`) eklemek neden sadece 2
+dosyayi degistirmemi gerektirdi?**
+Cunku `app`, `mcp-client` ve `groq` katmanlari aracları HIC sabit kodlamiyor
+(hardcode) - `app` her istekte `listMcpTools()` ile mcp-server'a "elinde
+ne var" diye soruyor, donen listeyi oldugu gibi Groq'a aktariyor. Yani
+yeni bir arac tanimlamak icin sadece (1) task-store'a mantigi, (2)
+mcp-server'a semayi eklemek yeterli - geri kalan her sey otomatik
+akiyor. Bu, Adim 1'deki "sorumluluklari ayir" kararinin somut karsiligi.
 
 **Neden veritabani yok, bellek ici veri kullanildi?**
 Sartname bunu bilincli olarak istiyor: proje MCP protokolunu ve arac

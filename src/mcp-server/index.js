@@ -12,7 +12,17 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { listTasks, createTask, updateTask, deleteTask } from "../task-store/index.js";
+import {
+  listTasks,
+  listTasksByPriority,
+  createTask,
+  updateTask,
+  deleteTask,
+} from "../task-store/index.js";
+
+// Aciliyet seviyeleri icin tek bir liste - hem taskSchema hem giris
+// semalarinda tekrar tekrar yazmamak icin ayri bir degiskende tutuyoruz.
+const PRIORITY_LEVELS = ["dusuk", "orta", "yuksek"];
 
 // Tek bir gorevin JSON Schema tanimi - hem cikis semalarinda tekrar
 // tekrar yazmamak icin ayri bir degiskende tutuyoruz.
@@ -22,11 +32,16 @@ const taskSchema = {
     id: { type: "integer", description: "Gorevin benzersiz kimligi" },
     title: { type: "string", description: "Gorev basligi" },
     completed: { type: "boolean", description: "Gorev tamamlandi mi" },
+    priority: {
+      type: "string",
+      enum: PRIORITY_LEVELS,
+      description: "Gorevin aciliyet duzeyi",
+    },
   },
-  required: ["id", "title", "completed"],
+  required: ["id", "title", "completed", "priority"],
 };
 
-// tools/list cagrisinda disariya ilan edilecek 4 aracin sozlesmesi.
+// tools/list cagrisinda disariya ilan edilecek 5 aracin sozlesmesi.
 // Her biri: isim, aciklama, giris semasi (inputSchema), cikis semasi
 // (outputSchema). LLM bu bilgiyle "hangi araci ne zaman, hangi
 // parametrelerle cagirabilirim" bilgisini ediniyor.
@@ -48,12 +63,33 @@ const TOOL_DEFINITIONS = [
     },
   },
   {
+    name: "list_tasks_by_priority",
+    description: "Gorevleri aciliyet sirasina gore (yuksekten dusuge) listeler.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      additionalProperties: false,
+    },
+    outputSchema: {
+      type: "object",
+      properties: {
+        tasks: { type: "array", items: taskSchema },
+      },
+      required: ["tasks"],
+    },
+  },
+  {
     name: "create_task",
     description: "Yeni bir gorev olusturur.",
     inputSchema: {
       type: "object",
       properties: {
         title: { type: "string", minLength: 1, description: "Gorev basligi" },
+        priority: {
+          type: "string",
+          enum: PRIORITY_LEVELS,
+          description: "Gorevin aciliyet duzeyi (belirtilmezse 'orta')",
+        },
       },
       required: ["title"],
       additionalProperties: false,
@@ -72,6 +108,11 @@ const TOOL_DEFINITIONS = [
         id: { type: "integer", description: "Guncellenecek gorevin id'si" },
         title: { type: "string", minLength: 1, description: "Yeni baslik (opsiyonel)" },
         completed: { type: "boolean", description: "Yeni tamamlanma durumu (opsiyonel)" },
+        priority: {
+          type: "string",
+          enum: PRIORITY_LEVELS,
+          description: "Yeni aciliyet duzeyi (opsiyonel)",
+        },
       },
       required: ["id"],
       additionalProperties: false,
@@ -97,6 +138,7 @@ const TOOL_DEFINITIONS = [
 // (asagidaki fonksiyonlar) bilinçli olarak ayri tutuluyor.
 const TOOL_HANDLERS = {
   list_tasks: () => ({ tasks: listTasks() }),
+  list_tasks_by_priority: () => ({ tasks: listTasksByPriority() }),
   create_task: (args) => createTask(args),
   update_task: (args) => updateTask(args),
   delete_task: (args) => deleteTask(args),

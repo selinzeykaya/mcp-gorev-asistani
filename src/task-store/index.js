@@ -3,10 +3,13 @@
 // sadece "gorev" kavrami uzerinde temel islemleri yapar.
 
 const seedTasks = [
-  { id: 1, title: "MCP sartnamesini oku", completed: false },
-  { id: 2, title: "Docker Compose kur", completed: false },
-  { id: 3, title: "Groq API anahtarini al", completed: true },
+  { id: 1, title: "MCP sartnamesini oku", completed: false, priority: "yuksek" },
+  { id: 2, title: "Docker Compose kur", completed: false, priority: "orta" },
+  { id: 3, title: "Groq API anahtarini al", completed: true, priority: "dusuk" },
 ];
+
+// Aciliyet seviyelerinin sayisal agirligi - siralama bunun uzerinden yapilir.
+const PRIORITY_WEIGHT = { dusuk: 1, orta: 2, yuksek: 3 };
 
 // Map: anahtar = id, deger = gorev objesi. Boylece "id'si 2 olani getir"
 // islemi listeyi baştan sona taramadan, tek adimda yapilir.
@@ -23,14 +26,21 @@ export function listTasks() {
   return Array.from(tasks.values()).map((task) => ({ ...task }));
 }
 
-export function createTask({ title }) {
-  const task = { id: nextId, title, completed: false };
+// listTasks()'i aynen kullanip sadece siraliyoruz - kopyalama mantigini
+// burada tekrar yazmiyoruz. Array.sort() stabildir (JS'in garantisi):
+// aciliyeti esit olan gorevler kendi aralarinda eklenme sirasini korur.
+export function listTasksByPriority() {
+  return listTasks().sort((a, b) => PRIORITY_WEIGHT[b.priority] - PRIORITY_WEIGHT[a.priority]);
+}
+
+export function createTask({ title, priority = "orta" }) {
+  const task = { id: nextId, title, completed: false, priority };
   tasks.set(task.id, task);
   nextId += 1;
   return { ...task };
 }
 
-export function updateTask({ id, title, completed }) {
+export function updateTask({ id, title, completed, priority }) {
   const task = tasks.get(id);
   if (!task) {
     throw new Error(`Gorev bulunamadi: id=${id}`);
@@ -41,6 +51,7 @@ export function updateTask({ id, title, completed }) {
   // bu satir onu yanlislikla yok sayardi.
   if (title !== undefined) task.title = title;
   if (completed !== undefined) task.completed = completed;
+  if (priority !== undefined) task.priority = priority;
   return { ...task };
 }
 
