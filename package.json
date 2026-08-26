@@ -1,0 +1,16 @@
+{
+  "name": "mcp-gorev-asistani",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Groq'taki bir LLM'in dort MCP araciyla bellek ici bir gorev listesini yonettigi ogretici proje.",
+  "scripts": {
+    "start": "node src/app/index.js",
+    "mcp-server": "node src/mcp-server/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.13.1",
+    "ajv": "^8.17.1",
+    "express": "^4.21.2"
+  }
+}
