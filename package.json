@@ -6,7 +6,8 @@
   "description": "Groq'taki bir LLM'in dort MCP araciyla bellek ici bir gorev listesini yonettigi ogretici proje.",
   "scripts": {
     "start": "node src/app/index.js",
-    "mcp-server": "node src/mcp-server/index.js"
+    "mcp-server": "node src/mcp-server/index.js",
+    "chat": "node scripts/chat-cli.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.1",
